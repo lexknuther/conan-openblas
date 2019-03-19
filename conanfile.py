@@ -3,24 +3,50 @@
 
 from conans import ConanFile, CMake, tools
 from glob import glob
-import os
+import os, re
 
 
-class openblasConan(ConanFile):
+def _load_possible_targets(version):
+    result = []
+    target_list_file_name = "TargetList.txt"
+    tools.download("https://raw.githubusercontent.com/xianyi/OpenBLAS/v" + version + "/" + target_list_file_name,
+                   target_list_file_name, overwrite=True)
+    if (not tools.sha256sum(
+            "%s" % target_list_file_name) == "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde"):
+        os.remove("%s" % target_list_file_name)
+        raise Exception("%s did not much the expected SHA256 sum." % target_list_file_name)
+    target_list = tools.load("%s" % target_list_file_name)
+    os.remove("%s" % target_list_file_name)
+    pattern = re.compile("^[A-Z]+$")
+    for line in target_list.split('\n'):
+        match = pattern.match(line)
+        if match:
+            result.append(match.group(0))
+    return result
+
+
+class OpenblasConan(ConanFile):
     name = "openblas"
     version = "0.3.5"
     url = "https://github.com/xianyi/OpenBLAS"
     homepage = "http://www.openblas.net/"
     description = "OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version."
     license = "BSD 3-Clause"
-    exports_sources = ["CMakeLists.txt", "LICENSE"]
+    exports_sources = ["LICENSE", "TargetList.txt"]
     settings = "os", "arch", "compiler", "build_type"
-    options = {"shared": [True, False],
-               "USE_MASS": [True, False],
-               "USE_OPENMP": [True, False],
-               "NO_LAPACKE": [True, False],
-               "NOFORTRAN": [True, False]}
-    default_options = "shared=True", "USE_MASS=False", "USE_OPENMP=False", "NO_LAPACKE=False", "NOFORTRAN=True"
+
+    _targets = _load_possible_targets(version)
+    options = {
+        "shared": [True, False],
+        "USE_MASS": [True, False],
+        "USE_OPENMP": [True, False],
+        "NO_LAPACKE": [True, False],
+        "NOFORTRAN": [True, False],
+        "TARGET": _targets
+
+    }
+    default_options = "shared=True", "USE_MASS=False", "USE_OPENMP=False", "NO_LAPACKE=True", "NOFORTRAN=False", "TARGET=%s" % \
+                      _targets[0]
 
     def _get_make_arch(self):
         return "32" if self.settings.arch == "x86" else "64"
@@ -74,18 +100,17 @@ class openblasConan(ConanFile):
 
     def _build_make(self, args=None):
         make_options = ["DEBUG=%s" % self._get_make_build_type_debug(),
-                        "NO_SHARED=%s" % self._get_make_option_value(not self.options.shared),
                         "BINARY=%s" % self._get_make_arch(),
                         "NO_LAPACKE=%s" % self._get_make_option_value(self.options.NO_LAPACKE),
                         "USE_MASS=%s" % self._get_make_option_value(self.options.USE_MASS),
                         "USE_OPENMP=%s" % self._get_make_option_value(self.options.USE_OPENMP),
                         "NOFORTRAN=%s" % self._get_make_option_value(self.options.NOFORTRAN)]
+        if self.options.shared:
+            make_options.append("NO_STATIC=1")
+        else:
+            make_options.append("NO_SHARED=1")
         # https://github.com/xianyi/OpenBLAS/wiki/How-to-build-OpenBLAS-for-Android
-        target = {"armv6": "ARMV6",
-                  "armv7": "ARMV7",
-                  "armv7hf": "ARMV7",
-                  "armv8": "ARMV8",
-                  "sparc": "SPARC"}.get(str(self.settings.arch))
+        target = self.options.TARGET
         if tools.cross_building(self.settings):
             if "CC_FOR_BUILD" in os.environ:
                 hostcc = os.environ["CC_FOR_BUILD"]
