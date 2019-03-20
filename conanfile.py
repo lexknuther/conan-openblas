@@ -3,20 +3,21 @@
 
 from conans import ConanFile, CMake, tools
 from glob import glob
-import os, re
+import os, re, tempfile
 
 
 def _load_possible_targets(version):
     result = []
     target_list_file_name = "TargetList.txt"
+    [temporary_file, path] = tempfile.mkstemp()
     tools.download("https://raw.githubusercontent.com/xianyi/OpenBLAS/v" + version + "/" + target_list_file_name,
-                   target_list_file_name, overwrite=True)
-    if (not tools.sha256sum(
-            "%s" % target_list_file_name) == "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde"):
-        os.remove("%s" % target_list_file_name)
+                   path, overwrite=True)
+    os.close(temporary_file)
+    if not tools.sha256sum(path) == "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde":
+        os.remove(path)
         raise Exception("%s did not much the expected SHA256 sum." % target_list_file_name)
-    target_list = tools.load("%s" % target_list_file_name)
-    os.remove("%s" % target_list_file_name)
+    target_list = tools.load(path)
+    os.remove(path)
     pattern = re.compile("^[A-Z]+$")
     for line in target_list.split('\n'):
         match = pattern.match(line)
