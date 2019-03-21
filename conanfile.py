@@ -3,21 +3,18 @@
 
 from conans import ConanFile, CMake, tools
 from glob import glob
-import os, re, tempfile
+import os, re, tempfile, requests, hashlib
 
 
 def _load_possible_targets(version):
     result = []
-    target_list_file_name = "TargetList.txt"
-    [temporary_file, path] = tempfile.mkstemp()
-    tools.download("https://raw.githubusercontent.com/xianyi/OpenBLAS/v" + version + "/" + target_list_file_name,
-                   path, overwrite=True)
-    os.close(temporary_file)
-    if not tools.sha256sum(path) == "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde":
-        os.remove(path)
-        raise Exception("%s did not much the expected SHA256 sum." % target_list_file_name)
-    target_list = tools.load(path)
-    os.remove(path)
+    url = "https://raw.githubusercontent.com/xianyi/OpenBLAS/v%s/TargetList.txt" % version
+    target_list = requests.get(url).text
+    actual_digest = hashlib.sha256(target_list).hexdigest()
+    expected_digest = "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde"
+    if not actual_digest == expected_digest:
+        raise Exception("The computed digest (%s) fot %s is not equal to the expected digest (%s)" % (
+        url, actual_digest, expected_digest))
     pattern = re.compile("^[A-Z]+$")
     for line in target_list.split('\n'):
         match = pattern.match(line)
