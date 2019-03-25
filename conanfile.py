@@ -14,7 +14,7 @@ def _load_possible_targets(version):
     expected_digest = "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde"
     if not actual_digest == expected_digest:
         raise Exception("The computed digest (%s) fot %s is not equal to the expected digest (%s)" % (
-        url, actual_digest, expected_digest))
+            url, actual_digest, expected_digest))
     pattern = re.compile("^[A-Z]+$")
     for line in target_list.split('\n'):
         match = pattern.match(line)
@@ -32,7 +32,6 @@ class OpenblasConan(ConanFile):
     license = "BSD 3-Clause"
     exports_sources = ["LICENSE", "TargetList.txt"]
     settings = "os", "arch", "compiler", "build_type"
-
     _targets = _load_possible_targets(version)
     options = {
         "shared": [True, False],
@@ -40,11 +39,19 @@ class OpenblasConan(ConanFile):
         "USE_OPENMP": [True, False],
         "NO_LAPACKE": [True, False],
         "NOFORTRAN": [True, False],
-        "TARGET": _targets
+        "TARGET": _targets,
+        "USE_THREAD": [True, False]
 
     }
-    default_options = "shared=True", "USE_MASS=False", "USE_OPENMP=False", "NO_LAPACKE=True", "NOFORTRAN=False", "TARGET=%s" % \
-                      _targets[0]
+    default_options = (
+        "shared=True",
+        "USE_MASS=False",
+        "USE_OPENMP=False",
+        "NO_LAPACKE=True",
+        "NOFORTRAN=False",
+        "USE_THREAD=False",
+        "TARGET=%s" % _targets[0]
+    )
 
     def _get_make_arch(self):
         return "32" if self.settings.arch == "x86" else "64"
@@ -97,12 +104,15 @@ class OpenblasConan(ConanFile):
         cmake.build()
 
     def _build_make(self, args=None):
-        make_options = ["DEBUG=%s" % self._get_make_build_type_debug(),
-                        "BINARY=%s" % self._get_make_arch(),
-                        "NO_LAPACKE=%s" % self._get_make_option_value(self.options.NO_LAPACKE),
-                        "USE_MASS=%s" % self._get_make_option_value(self.options.USE_MASS),
-                        "USE_OPENMP=%s" % self._get_make_option_value(self.options.USE_OPENMP),
-                        "NOFORTRAN=%s" % self._get_make_option_value(self.options.NOFORTRAN)]
+        make_options = [
+            "DEBUG=%s" % self._get_make_build_type_debug(),
+            "BINARY=%s" % self._get_make_arch(),
+            "NO_LAPACKE=%s" % self._get_make_option_value(self.options.NO_LAPACKE),
+            "USE_MASS=%s" % self._get_make_option_value(self.options.USE_MASS),
+            "USE_OPENMP=%s" % self._get_make_option_value(self.options.USE_OPENMP),
+            "NOFORTRAN=%s" % self._get_make_option_value(self.options.NOFORTRAN),
+            "USE_THREAD=%s" % self._get_make_option_value(self.options.USE_THREAD),
+        ]
         if self.options.shared:
             make_options.append("NO_STATIC=1")
         else:
