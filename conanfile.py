@@ -14,7 +14,7 @@ def _load_possible_targets(version):
         actual_digest = hashlib.sha256(target_list.encode("utf-8")).hexdigest()
         expected_digest = "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde"
         if not actual_digest == expected_digest:
-            raise Exception("The computed digest (%s) fot %s is not equal to the expected digest (%s)" % (
+            raise Exception("The computed digest (%s) for %s is not equal to the expected digest (%s)" % (
                 url, actual_digest, expected_digest))
         pattern = re.compile("^[A-Z]+$")
         for line in target_list.split('\n'):
