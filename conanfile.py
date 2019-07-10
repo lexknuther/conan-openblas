@@ -3,7 +3,7 @@
 
 from conans import ConanFile, CMake, tools
 from glob import glob
-import os, re, tempfile, requests, hashlib
+import os, re, requests, hashlib
 
 
 def _load_possible_targets(version):
