@@ -22,7 +22,7 @@ def _load_possible_targets(version):
             if match:
                 result.append(match.group(0))
     except requests.exceptions.ConnectionError:
-        result.append("HASWELL")
+        result.append("SANDYBRIDGE")
     return result
 
 
