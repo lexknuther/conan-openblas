@@ -9,17 +9,20 @@ import os, re, tempfile, requests, hashlib
 def _load_possible_targets(version):
     result = []
     url = "https://raw.githubusercontent.com/xianyi/OpenBLAS/v%s/TargetList.txt" % version
-    target_list = requests.get(url).text
-    actual_digest = hashlib.sha256(target_list.encode("utf-8")).hexdigest()
-    expected_digest = "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde"
-    if not actual_digest == expected_digest:
-        raise Exception("The computed digest (%s) fot %s is not equal to the expected digest (%s)" % (
-            url, actual_digest, expected_digest))
-    pattern = re.compile("^[A-Z]+$")
-    for line in target_list.split('\n'):
-        match = pattern.match(line)
-        if match:
-            result.append(match.group(0))
+    try:
+        target_list = requests.get(url).text
+        actual_digest = hashlib.sha256(target_list.encode("utf-8")).hexdigest()
+        expected_digest = "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde"
+        if not actual_digest == expected_digest:
+            raise Exception("The computed digest (%s) fot %s is not equal to the expected digest (%s)" % (
+                url, actual_digest, expected_digest))
+        pattern = re.compile("^[A-Z]+$")
+        for line in target_list.split('\n'):
+            match = pattern.match(line)
+            if match:
+                result.append(match.group(0))
+    except requests.exceptions.ConnectionError:
+        result.append("HASWELL")
     return result
 
 
