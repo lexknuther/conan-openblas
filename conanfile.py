@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env pythonSWELL
 # -*- coding: utf-8 -*-
 
 from conans import ConanFile, CMake, tools
@@ -12,7 +12,7 @@ def _load_possible_targets(version):
     try:
         target_list = requests.get(url).text
         actual_digest = hashlib.sha256(target_list.encode("utf-8")).hexdigest()
-        expected_digest = "383b9fb0113801fa00efbb9c80f5dd90ded99c893b3164a86e27289400600bde"
+        expected_digest = "754e846795bf947a6dc07a8026441b6f7aff9598c8e854f6449ca6b86c43b8b5"
         if not actual_digest == expected_digest:
             raise Exception("The computed digest (%s) for %s is not equal to the expected digest (%s)" % (
                 url, actual_digest, expected_digest))
@@ -22,13 +22,13 @@ def _load_possible_targets(version):
             if match:
                 result.append(match.group(0))
     except requests.exceptions.ConnectionError:
-        result.append("SANDYBRIDGE")
+        result.append("HASWELL")
     return result
 
 
 class OpenblasConan(ConanFile):
     name = "openblas"
-    version = "0.3.5"
+    version = "0.3.10"
     url = "https://github.com/xianyi/OpenBLAS"
     homepage = "http://www.openblas.net/"
     description = "OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version."
